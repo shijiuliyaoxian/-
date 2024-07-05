@@ -1,26 +1,30 @@
-# This is a basic workflow to help you get started with Actions
+name: Check Notes
 
-name: CI
+on:
+  workflow_dispatch:
 
-# Controls when the workflow will run
-on: workflow_dispatch
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  check-notes:
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Get Notes from Main Branch
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          NOTES_URL="https://api.github.com/repos/shijiuliyaoxian/ceshi/contents/notes.md?ref=main"
+          RESPONSE=$(curl -s $NOTES_URL)
+          CONTENT=$(echo $RESPONSE | jq -r '.content' | base64 --decode)
+          echo "## Notes from Main Branch" > notes_output.md
+          echo "$CONTENT" >> notes_output.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Notes Output
+        uses: actions/upload-artifact@v2
+        with:
+          name: notes-output
+          path: notes_output.md
